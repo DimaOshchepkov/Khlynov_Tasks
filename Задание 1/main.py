@@ -5,7 +5,7 @@ import sys
 from dataclasses import dataclass
 import logging
 
-logging.basicConfig(level=logging.info, filename="main.log",filemode="w",
+logging.basicConfig(level=logging.INFO, filename="main.log",filemode="w",
                     format="%(asctime)s %(levelname)s %(message)s")
                    
 
