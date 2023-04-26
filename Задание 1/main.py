@@ -14,8 +14,8 @@ if __name__ == '__main__':
     name_db = "currency.db"
     date = sys.argv[1]
     if not re.match(r"\d\d\d\d-\d\d-\d\d", date):
-        logging.info("Invalid date")
-        print("Invalid date")
+        logging.info("Invalid date format")
+        print("Invalid date format")
         raise SystemExit
         
     vcodes = sys.argv[2:]

@@ -52,10 +52,13 @@ def find_info_currency_from_xml(xml : etree._Element, code : str) -> tuple:
     Returns:
         tuple: (vname.text, vnom.text, vch_code.text, vcurs.text) or None
     """
-    vcode = xml.xpath(f".//Vcode[normalize-space(text())={code}][1]")[0]
-    if not vch_code:
+    sup = xml.xpath(f".//Vcode[normalize-space(text())={code}][1]")
+    if not sup:
+        logging.info(f"Code {code} not found")
+        print(f"Code {code} not found")
         return None
     
+    vcode = sup[0]
     valute_curs_on_date = vcode.getparent()
     vname = valute_curs_on_date.find("Vname")
     vnom = valute_curs_on_date.find("Vnom")
