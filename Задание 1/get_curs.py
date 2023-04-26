@@ -110,6 +110,9 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
                 insert_currency_order = Response("INSERT INTO CURRENCY_ORDER (ondate) VALUES (?)",
                                                     (date,))
                 SenderResponce.apply(name_db, [insert_currency_order])
+            else:
+                logging.info(f"{date} already in BD")
+                print(f"{date} already in BD")
         
             # Получение order_id для связи с таблицей CURRENCY_ORDER
             cursor.execute("SELECT id FROM CURRENCY_ORDER WHERE ondate = ?", (date,))
@@ -127,6 +130,10 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
                 insert_currency_rates = Response("""INSERT INTO CURRENCY_RATES
                         (order_id, name, numeric_code, alphabetic_code, scale, rate)
                         VALUES (?, ?, ?, ?, ?, ?)""", data_for_currency_rates)
+                
+            else:
+                logging.info(f"{name} already in BD")
+                print(f"{name} already in BD")
             
                 SenderResponce.apply(name_db, [insert_currency_rates])
         except Exception as e:
