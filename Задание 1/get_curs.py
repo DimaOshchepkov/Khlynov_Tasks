@@ -43,15 +43,19 @@ def get_curs_on_date_XML(date: str) -> etree._Element:
 
 def find_info_currency_from_xml(xml : etree._Element, code : str) -> tuple:
     """Finds the values needed for the database
+    return None if code not found
 
     Args:
         xml (etree._Element): xml tree, which is obtained by the get_curs_on_date_XML request 
         code (str): currency code
 
     Returns:
-        tuple: (vname.text, vnom.text, vch_code.text, vcurs.text)
+        tuple: (vname.text, vnom.text, vch_code.text, vcurs.text) or None
     """
     vcode = xml.xpath(f".//Vcode[normalize-space(text())={code}][1]")[0]
+    if not vch_code:
+        return None
+    
     valute_curs_on_date = vcode.getparent()
     vname = valute_curs_on_date.find("Vname")
     vnom = valute_curs_on_date.find("Vnom")
@@ -86,8 +90,11 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
     conn = sqlite3.connect(name_db)
     cursor = conn.cursor()
     for code in Vcodes:
-        name, nom, ch_code, curs = find_info_currency_from_xml(xml, code)
+        sup = find_info_currency_from_xml(xml, code)
+        if sup is None:
+            continue
 
+        name, nom, ch_code, curs = find_info_currency_from_xml(xml, code)
         try:
             # Проверка наличия order_date в таблице CURRENCY_ORDER
             cursor.execute("SELECT id FROM CURRENCY_ORDER WHERE ondate = ?", (date,))

@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from get_curs import *
 from ResponceBD import *
 import logging
+import re
 
 if __name__ == '__main__':
 
@@ -12,7 +13,15 @@ if __name__ == '__main__':
 
     name_db = "currency.db"
     date = sys.argv[1]
+    if not re.match(r"\d\d\d\d-\d\d-\d\d", date):
+        logging.info("Invalid date")
+        print("Invalid date")
+        raise SystemExit
+        
     vcodes = sys.argv[2:]
+    logging.info(f"codes: {vcodes}")
+    print(f"codes: {vcodes}")
+
 
     currency_rates_response = '''CREATE TABLE IF NOT EXISTS CURRENCY_RATES
                             (order_id INTEGER,
