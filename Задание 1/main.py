@@ -11,15 +11,19 @@ class CreaterDB:
 
         # Connect to SQLite database
         conn = sqlite3.connect(name_db)
-        cursor = conn.cursor()
-        conn.commit()
 
-        for table in tables:
-            cursor.execute(table)
+        try:
+            cursor = conn.cursor()
+            conn.commit()
 
-        # Commit changes and close connection
-        
-        conn.close()
+            for table in tables:
+                cursor.execute(table)
+
+            # Commit changes and close connection
+        except Exception as e:
+            print("Произошла ошибка при создании базы данных\n", e)
+        finally:
+            conn.close()
     
 
 @dataclass
@@ -69,7 +73,12 @@ def GetCursOnDateXML(date: str) -> None:
 
 def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
 
-    xml = GetCursOnDateXML(date)
+    try:
+        xml = GetCursOnDateXML(date)
+    except Exception as e:
+        print("Ошибка при получении данных c сервиса")
+        print(e)
+        return
 
     # Установка соединения с базой данных
     conn = sqlite3.connect(name_db)
@@ -82,32 +91,35 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
         vcurs = valute_curs_on_date.find("Vcurs")
         vch_code = valute_curs_on_date.find("VchCode")
 
-        # Проверка наличия order_date в таблице CURRENCY_ORDER
-        cursor.execute("SELECT id FROM CURRENCY_ORDER WHERE ondate = ?", (date,))
-        existing_order = cursor.fetchone()
+        try:
+            # Проверка наличия order_date в таблице CURRENCY_ORDER
+            cursor.execute("SELECT id FROM CURRENCY_ORDER WHERE ondate = ?", (date,))
+            existing_order = cursor.fetchone()
 
-        if existing_order is None:
-            # Вставка нового значения в таблицу CURRENCY_ORDER
-            insert_currency_order = InsertResponse("INSERT INTO CURRENCY_ORDER (ondate) VALUES (?)",
-                                                (date,))
-            InserterToDB.apply(name_db, [insert_currency_order])
-       
-        # Получение order_id для связи с таблицей CURRENCY_ORDER
-        cursor.execute("SELECT id FROM CURRENCY_ORDER WHERE ondate = ?", (date,))
-        order_id = cursor.fetchone()[0]
-
-        cursor.execute("SELECT name FROM CURRENCY_RATES WHERE name = ?", (vname.text,))
-        existing_name = cursor.fetchone()
-
-        if existing_name is None:
-            data_for_currency_rates = (order_id, vname.text, vcode.text,
-                                    vch_code.text, vnom.text, vcurs.text)
+            if existing_order is None:
+                # Вставка нового значения в таблицу CURRENCY_ORDER
+                insert_currency_order = InsertResponse("INSERT INTO CURRENCY_ORDER (ondate) VALUES (?)",
+                                                    (date,))
+                InserterToDB.apply(name_db, [insert_currency_order])
         
-            insert_currency_rates = InsertResponse("""INSERT INTO CURRENCY_RATES
-                    (order_id, name, numeric_code, alphabetic_code, scale, rate)
-                    VALUES (?, ?, ?, ?, ?, ?)""", data_for_currency_rates)
-        
-            InserterToDB.apply(name_db, [insert_currency_rates])
+            # Получение order_id для связи с таблицей CURRENCY_ORDER
+            cursor.execute("SELECT id FROM CURRENCY_ORDER WHERE ondate = ?", (date,))
+            order_id = cursor.fetchone()[0]
+
+            cursor.execute("SELECT name FROM CURRENCY_RATES WHERE name = ?", (vname.text,))
+            existing_name = cursor.fetchone()
+
+            if existing_name is None:
+                data_for_currency_rates = (order_id, vname.text, vcode.text,
+                                        vch_code.text, vnom.text, vcurs.text)
+            
+                insert_currency_rates = InsertResponse("""INSERT INTO CURRENCY_RATES
+                        (order_id, name, numeric_code, alphabetic_code, scale, rate)
+                        VALUES (?, ?, ?, ?, ?, ?)""", data_for_currency_rates)
+            
+                InserterToDB.apply(name_db, [insert_currency_rates])
+        except Exception as e:
+            print("Ошибка при работе с бд\n", e)
 
     # Закрытие соединения с базой данных
     cursor.close()
@@ -129,6 +141,7 @@ curency_order_response = '''CREATE TABLE IF NOT EXISTS CURRENCY_ORDER
 CreaterDB.apply(name_db, [currency_rates_response, curency_order_response])
 
 add_in_db(name_db, vcodes, '2020-01-01')
+
 
 
 
