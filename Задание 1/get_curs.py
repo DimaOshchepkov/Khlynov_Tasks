@@ -29,9 +29,8 @@ def get_curs_on_date_XML(date: str) -> etree._Element:
         etree._Element: xml tree
     """
     client = Client('http://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?wsdl')
-    # Construct the SOAP request payload
     request_payload = {
-        'On_date': date  # Replace with the actual value for the 'On_date' parameter
+        'On_date': date 
     }
 
     xml = client.service.GetCursOnDateXML(**request_payload)
@@ -89,7 +88,6 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
         logging.error(e)
         return
 
-    # Установка соединения с базой данных
     conn = sqlite3.connect(name_db)
     cursor = conn.cursor()
     for code in Vcodes:
@@ -106,7 +104,6 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
             if existing_order is None:
                 logging.info(f"write to database CURRENCY_ORDER")
                 print("write to database CURRENCY_ORDER")
-                # Вставка нового значения в таблицу CURRENCY_ORDER
                 insert_currency_order = Response("INSERT INTO CURRENCY_ORDER (ondate) VALUES (?)",
                                                     (date,))
                 SenderResponce.apply(name_db, [insert_currency_order])
@@ -140,6 +137,5 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
             print("Ошибка при работе с бд\n", e)
             logging.error(e)
 
-    # Закрытие соединения с базой данных
     cursor.close()
     conn.close()

@@ -38,25 +38,21 @@ if __name__ == '__main__':
 
     add_in_db(name_db, vcodes, date)
 
-   # Подключение к базе данных
     conn = sqlite3.connect(name_db)
     c = conn.cursor()
 
-    # Формирование SQL-запроса с использованием параметров
     query = '''SELECT CURRENCY_RATES.*, CURRENCY_ORDER.*
             FROM CURRENCY_RATES
             JOIN CURRENCY_ORDER ON CURRENCY_RATES.order_id = CURRENCY_ORDER.id
             WHERE CURRENCY_RATES.numeric_code IN ({})'''.format(','.join(['?']*len(vcodes)))
     
-    # Выполнение SQL-запроса и извлечение результатов
+
     c.execute(query, tuple(vcodes))
     rows = c.fetchall()
 
-    # Вывод результатов
     for row in rows:
         print(row)
 
-    # Закрытие соединения с базой данных
     conn.close()
 
     
