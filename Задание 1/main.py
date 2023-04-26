@@ -45,6 +45,7 @@ class SenderResponce:
 def get_curs_on_date_XML(date: str) -> etree._Element:
     """
     Request for http://www.cbr.ru/DailyInfoWebServ/DailyInfo.asmx?wsdl
+    Method: GetCursOnDateXML
 
     The data is structured like this:
     <ValuteData>
@@ -69,17 +70,17 @@ def get_curs_on_date_XML(date: str) -> etree._Element:
         'On_date': date  # Replace with the actual value for the 'On_date' parameter
     }
 
-    return client.service.get_curs_on_date_XML(**request_payload)
+    return client.service.GetCursOnDateXML(**request_payload)
 
 def find_info_currency_from_xml(xml : etree._Element, code : str) -> tuple:
-    """_summary_
+    """Finds the values needed for the database
 
     Args:
         xml (etree._Element): xml tree, which is obtained by the get_curs_on_date_XML request 
         code (str): currency code
 
     Returns:
-        tuple: (vch_code.text, vname.text, vnom.text, vcurs.text, vch_code)
+        tuple: (vname.text, vnom.text, vch_code.text, vcurs.text)
     """
     vcode = xml.xpath(f".//Vcode[normalize-space(text())={code}][1]")[0]
     valute_curs_on_date = vcode.getparent()
@@ -88,7 +89,7 @@ def find_info_currency_from_xml(xml : etree._Element, code : str) -> tuple:
     vcurs = valute_curs_on_date.find("Vcurs")
     vch_code = valute_curs_on_date.find("VchCode")
 
-    return (vch_code.text, vname.text, vnom.text, vcurs.text, vch_code)
+    return (vname.text, vnom.text, vch_code.text, vcurs.text)
 
 
 
@@ -113,7 +114,7 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
     conn = sqlite3.connect(name_db)
     cursor = conn.cursor()
     for code in Vcodes:
-        vcode, vname, vcode, vch_code, vnom, vcurs = find_info_currency_from_xml(xml, code)
+        name, nom, ch_code, nom, curs = find_info_currency_from_xml(xml, code)
 
         try:
             # Проверка наличия order_date в таблице CURRENCY_ORDER
@@ -130,12 +131,12 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
             cursor.execute("SELECT id FROM CURRENCY_ORDER WHERE ondate = ?", (date,))
             order_id = cursor.fetchone()[0]
 
-            cursor.execute("SELECT name FROM CURRENCY_RATES WHERE name = ?", (vname.text,))
+            cursor.execute("SELECT name FROM CURRENCY_RATES WHERE name = ?", (name.text,))
             existing_name = cursor.fetchone()
 
             if existing_name is None:
-                data_for_currency_rates = (order_id, vname.text, vcode.text,
-                                        vch_code.text, vnom.text, vcurs.text)
+                data_for_currency_rates = (order_id, name.text, code.text,
+                                        ch_code.text, nom.text, curs.text)
             
                 insert_currency_rates = Response("""INSERT INTO CURRENCY_RATES
                         (order_id, name, numeric_code, alphabetic_code, scale, rate)
@@ -150,7 +151,7 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
     conn.close()
 
 name_db = "currency.db"
-vcodes = ['826', '944']
+vcodes = ['826', '944', '392']
 
 currency_rates_response = '''CREATE TABLE IF NOT EXISTS CURRENCY_RATES
                         (order_id INTEGER,
