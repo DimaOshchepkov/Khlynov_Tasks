@@ -399,3 +399,5 @@ FodyWeavers.xsd
 
 *.db
 output.xml
+__pycache__
+*.log
