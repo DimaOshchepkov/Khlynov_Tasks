@@ -127,7 +127,7 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
     conn = sqlite3.connect(name_db)
     cursor = conn.cursor()
     for code in Vcodes:
-        name, nom, ch_code, nom, curs = find_info_currency_from_xml(xml, code)
+        name, nom, ch_code, curs = find_info_currency_from_xml(xml, code)
 
         try:
             # Проверка наличия order_date в таблице CURRENCY_ORDER
@@ -146,14 +146,14 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
             cursor.execute("SELECT id FROM CURRENCY_ORDER WHERE ondate = ?", (date,))
             order_id = cursor.fetchone()[0]
 
-            cursor.execute("SELECT name FROM CURRENCY_RATES WHERE name = ?", (name.text,))
+            cursor.execute("SELECT name FROM CURRENCY_RATES WHERE name = ?", (name,))
             existing_name = cursor.fetchone()
 
             if existing_name is None:
                 logging.info("write to database CURRENCY_RATES")
                 print("write to database CURRENCY_RATES")
-                data_for_currency_rates = (order_id, name.text, code.text,
-                                        ch_code.text, nom.text, curs.text)
+                data_for_currency_rates = (order_id, name, code,
+                                        ch_code, nom, curs)
             
                 insert_currency_rates = Response("""INSERT INTO CURRENCY_RATES
                         (order_id, name, numeric_code, alphabetic_code, scale, rate)
