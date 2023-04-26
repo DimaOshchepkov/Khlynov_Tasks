@@ -1,6 +1,3 @@
-from zeep import Client
-import sqlite3
-from lxml import etree
 import sys
 from dataclasses import dataclass
 from get_curs import *
@@ -14,7 +11,8 @@ if __name__ == '__main__':
                     
 
     name_db = "currency.db"
-    vcodes = ['826', '944', '392', '752']
+    date = sys.argv[1]
+    vcodes = sys.argv[2:]
 
     currency_rates_response = '''CREATE TABLE IF NOT EXISTS CURRENCY_RATES
                             (order_id INTEGER,
@@ -28,7 +26,7 @@ if __name__ == '__main__':
 
     SenderResponce.apply(name_db, [Response(curency_order_response), Response(currency_rates_response)])
 
-    add_in_db(name_db, vcodes, '2020-01-01')
+    add_in_db(name_db, vcodes, date)
 
 
 
