@@ -50,6 +50,19 @@ def GetCursOnDateXML(date: str) -> None:
 
     return client.service.GetCursOnDateXML(**request_payload)
 
+def find_info_currency_from_xml(xml : etree, code : str) -> tuple:
+
+    vcode = xml.xpath(f".//Vcode[normalize-space(text())={code}][1]")[0]
+    valute_curs_on_date = vcode.getparent()
+    vname = valute_curs_on_date.find("Vname")
+    vnom = valute_curs_on_date.find("Vnom")
+    vcurs = valute_curs_on_date.find("Vcurs")
+    vch_code = valute_curs_on_date.find("VchCode")
+
+    return (vch_code.text, vname.text, vnom.text, vcurs.text, vch_code)
+
+
+
 def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
 
     try:
@@ -63,12 +76,7 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
     conn = sqlite3.connect(name_db)
     cursor = conn.cursor()
     for code in Vcodes:
-        vcode = xml.xpath(f".//Vcode[normalize-space(text())={code}][1]")[0]
-        valute_curs_on_date = vcode.getparent()
-        vname = valute_curs_on_date.find("Vname")
-        vnom = valute_curs_on_date.find("Vnom")
-        vcurs = valute_curs_on_date.find("Vcurs")
-        vch_code = valute_curs_on_date.find("VchCode")
+        vcode, vname, vcode, vch_code, vnom, vcurs = find_info_currency_from_xml(xml, code)
 
         try:
             # Проверка наличия order_date в таблице CURRENCY_ORDER
