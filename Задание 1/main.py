@@ -3,6 +3,10 @@ import sqlite3
 from lxml import etree
 import sys
 from dataclasses import dataclass
+import logging
+
+logging.basicConfig(level=logging.info, filename="main.log",filemode="w",
+                    format="%(asctime)s %(levelname)s %(message)s")
                    
 
 @dataclass
@@ -33,11 +37,12 @@ class SenderResponce:
         cursor = conn.cursor()
 
         for res in responces:
-            # Execute SQL query to insert data into CURRENCY_RATES table
             cursor.execute(res.responce, res.data)
             conn.commit()
+            logging.info(f"Response: {res.responce}, {res.data} are successfully sent")
+            print("Response: " + res.responce +''
+                  + str(res.data) + " are successfully sent")
 
-        # Commit the transaction and close connection
         
         conn.close()
 
@@ -70,7 +75,12 @@ def get_curs_on_date_XML(date: str) -> etree._Element:
         'On_date': date  # Replace with the actual value for the 'On_date' parameter
     }
 
-    return client.service.GetCursOnDateXML(**request_payload)
+    xml = client.service.GetCursOnDateXML(**request_payload)
+    if xml is not None:
+        logging.info("Success request")
+        print("Success request")
+
+    return xml
 
 def find_info_currency_from_xml(xml : etree._Element, code : str) -> tuple:
     """Finds the values needed for the database
@@ -89,6 +99,8 @@ def find_info_currency_from_xml(xml : etree._Element, code : str) -> tuple:
     vcurs = valute_curs_on_date.find("Vcurs")
     vch_code = valute_curs_on_date.find("VchCode")
 
+    logging.info(f"For {code} found {vname.text}, {vnom.text}, {vch_code.text}, {vcurs.text}")
+
     return (vname.text, vnom.text, vch_code.text, vcurs.text)
 
 
@@ -105,9 +117,10 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
 
     try:
         xml = get_curs_on_date_XML(date)
+        logging.info('xml recieved')
     except Exception as e:
         print("Ошибка при получении данных c сервиса\n", e)
-        print(e)
+        logging.error(e)
         return
 
     # Установка соединения с базой данных
@@ -122,6 +135,8 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
             existing_order = cursor.fetchone()
 
             if existing_order is None:
+                logging.info(f"write to database CURRENCY_ORDER")
+                print("write to database CURRENCY_ORDER")
                 # Вставка нового значения в таблицу CURRENCY_ORDER
                 insert_currency_order = Response("INSERT INTO CURRENCY_ORDER (ondate) VALUES (?)",
                                                     (date,))
@@ -135,6 +150,8 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
             existing_name = cursor.fetchone()
 
             if existing_name is None:
+                logging.info("write to database CURRENCY_RATES")
+                print("write to database CURRENCY_RATES")
                 data_for_currency_rates = (order_id, name.text, code.text,
                                         ch_code.text, nom.text, curs.text)
             
@@ -145,6 +162,7 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
                 SenderResponce.apply(name_db, [insert_currency_rates])
         except Exception as e:
             print("Ошибка при работе с бд\n", e)
+            logging.error(e)
 
     # Закрытие соединения с базой данных
     cursor.close()
