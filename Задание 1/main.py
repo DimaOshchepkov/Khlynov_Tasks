@@ -4,34 +4,13 @@ from lxml import etree
 import sys
 from dataclasses import dataclass
                    
-class CreaterDB:
-
-    @staticmethod
-    def apply(name_db : str, tables: list[str]) -> None:
-
-        # Connect to SQLite database
-        conn = sqlite3.connect(name_db)
-
-        try:
-            cursor = conn.cursor()
-            conn.commit()
-
-            for table in tables:
-                cursor.execute(table)
-
-            # Commit changes and close connection
-        except Exception as e:
-            print("Произошла ошибка при создании базы данных\n", e)
-        finally:
-            conn.close()
-    
 
 @dataclass
-class InsertResponse:
+class Response:
     __insert_responce : str = None
     __data : list[tuple] = None
 
-    def __init__(self, insert_responce: str, data : list[tuple]) -> None:
+    def __init__(self, insert_responce: str, data : list[tuple] = []) -> None:
         self.__insert_responce = insert_responce
         self.__data = data
     
@@ -43,10 +22,10 @@ class InsertResponse:
     def data(self) -> list[tuple]:
         return self.__data
     
-class InserterToDB:
+class SenderResponce:
 
     @staticmethod
-    def apply(name_bd: str, inserts_responce : list[InsertResponse]) -> None:
+    def apply(name_bd: str, inserts_responce : list[Response]) -> None:
         
         conn = sqlite3.connect(name_bd)
         cursor = conn.cursor()
@@ -76,7 +55,7 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
     try:
         xml = GetCursOnDateXML(date)
     except Exception as e:
-        print("Ошибка при получении данных c сервиса")
+        print("Ошибка при получении данных c сервиса\n", e)
         print(e)
         return
 
@@ -98,9 +77,9 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
 
             if existing_order is None:
                 # Вставка нового значения в таблицу CURRENCY_ORDER
-                insert_currency_order = InsertResponse("INSERT INTO CURRENCY_ORDER (ondate) VALUES (?)",
+                insert_currency_order = Response("INSERT INTO CURRENCY_ORDER (ondate) VALUES (?)",
                                                     (date,))
-                InserterToDB.apply(name_db, [insert_currency_order])
+                SenderResponce.apply(name_db, [insert_currency_order])
         
             # Получение order_id для связи с таблицей CURRENCY_ORDER
             cursor.execute("SELECT id FROM CURRENCY_ORDER WHERE ondate = ?", (date,))
@@ -113,11 +92,11 @@ def add_in_db(name_db : str, Vcodes : list, date : str) -> None:
                 data_for_currency_rates = (order_id, vname.text, vcode.text,
                                         vch_code.text, vnom.text, vcurs.text)
             
-                insert_currency_rates = InsertResponse("""INSERT INTO CURRENCY_RATES
+                insert_currency_rates = Response("""INSERT INTO CURRENCY_RATES
                         (order_id, name, numeric_code, alphabetic_code, scale, rate)
                         VALUES (?, ?, ?, ?, ?, ?)""", data_for_currency_rates)
             
-                InserterToDB.apply(name_db, [insert_currency_rates])
+                SenderResponce.apply(name_db, [insert_currency_rates])
         except Exception as e:
             print("Ошибка при работе с бд\n", e)
 
@@ -138,7 +117,7 @@ currency_rates_response = '''CREATE TABLE IF NOT EXISTS CURRENCY_RATES
 curency_order_response = '''CREATE TABLE IF NOT EXISTS CURRENCY_ORDER
                         (id INTEGER PRIMARY KEY AUTOINCREMENT, ondate TEXT UNIQUE NOT NULL)'''
 
-CreaterDB.apply(name_db, [currency_rates_response, curency_order_response])
+SenderResponce.apply(name_db, [Response(curency_order_response), Response(currency_rates_response)])
 
 add_in_db(name_db, vcodes, '2020-01-01')
 
